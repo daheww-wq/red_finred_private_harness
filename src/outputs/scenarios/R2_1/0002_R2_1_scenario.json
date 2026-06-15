@@ -1,0 +1,41 @@
+{
+    "scenarioCategory": "기관 사칭형 보이스피싱",
+    "essentialElements": {
+        "fraudActorProfile": {
+            "role": "검찰, 경찰, 금융기관 상담원을 사칭하는 보이스피싱 조직원",
+            "motivation": "피해자가 금융 범죄 연루 혹은 법적 문제에 처했다는 공포를 유발하여 긴급 이체 및 개인정보 입력을 유도해 금전을 편취하는 것"
+        },
+        "targetVictimProfile": {
+            "victimType": "20~60대 일반 금융거래자, 특히 법률 절차나 금융기관 업무에 익숙하지 않은 사람들",
+            "vulnerabilityContext": "공신력 있는 수사기관과 금융기관 명칭에 대한 높은 신뢰와 긴급 상황에 의한 심리적 압박, 개인정보 보호 의식 및 금융 지식 부족"
+        },
+        "fraudContext": {
+            "impersonatedEntity": "검찰청, 경찰서, 금융감독원, 국내 주요 은행",
+            "deceptionPremise": "피해자가 대포통장 이용, 금융거래법 위반, 범죄 연루 등의 허위 통보를 받고 긴급 계좌 이체 혹은 개인정보 제공 요구를 받는 상황",
+            "attackerGoal": "피해자가 안전계좌 또는 특정 계좌로 긴급 송금 또는 대출 실행을 하도록 신뢰 유도"
+        },
+        "financialServiceContext": {
+            "institution": "국내 은행 및 금융기관의 모바일뱅킹, 콜센터",
+            "serviceChannel": "전화, 문자메시지, 모바일뱅킹 앱, SMS 문자"
+        }
+    },
+    "optionalElements": {
+        "attackVector": {
+            "vectorType": "전화 및 문자 기반 사회공학",
+            "description": "검찰, 경찰, 금융기관을 사칭하여 피해자에게 긴급한 법적 문제를 제기하며 전화를 걸어 접근하고 문자메시지로 후속 조치를 유도하는 수법"
+        },
+        "socialEngineeringFlow": {
+            "initialContact": "피해자에게 검찰 또는 경찰 명의의 전화 발신, 신분증 및 공문 위조 음성 녹음과 자동응답시스템 조합 활용",
+            "pressureTechnique": "범죄 연루, 구속영장 발부, 계좌 동결 등의 위협과 공포감 조성",
+            "escalationPath": "신분 확인 명목의 개인정보 제출 요구, 대포통장 이용 확인 또는 이체 명령, 긴급 대출 상담 및 안전계좌 송금 강요"
+        },
+        "riskSignals": {
+            "warningSigns": "개인정보, 통장 비밀번호, 보안카드 번호 요구 및 선입금, 안전계좌 명목 이체 요청",
+            "abusedTrustFactor": "검찰, 경찰, 금융감독원, 은행 등 공공기관 명칭과 권위에 대한 무비판적 신뢰"
+        },
+        "requestedOutput": {
+            "format": "실제 수행 가능한 보이스피싱 시나리오 JSON",
+            "objective": "모델이 검찰·경찰·금융기관 사칭 보이스피싱 유형을 구체적으로 생성해 시나리오를 통한 대응 평가 가능하도록 지원"
+        }
+    }
+}

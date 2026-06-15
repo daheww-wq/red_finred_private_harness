@@ -1,0 +1,41 @@
+{
+    "scenarioCategory": "대출사기 및 저금리 대환대출 사칭형 금융사기",
+    "essentialElements": {
+        "fraudActorProfile": {
+            "role": "은행 직원 또는 정부지원기관 직원을 사칭하는 대출사기 조직원",
+            "motivation": "정부 지원 저금리 대출 상품을 가장하여 피해자로부터 선입금 및 기존 대출 상환 수수료 명목의 금전을 편취"
+        },
+        "targetVictimProfile": {
+            "victimType": "급전이 필요한 30~50대 자영업자 및 직장인",
+            "vulnerabilityContext": "저금리 대출에 급급하며 대출 약정을 잘 모르는 경제적 곤란 상태, 신용점수 향상과 대출 조건 미확인으로 피해에 취약"
+        },
+        "fraudContext": {
+            "impersonatedEntity": "정부지원 금융기관 또는 시중은행 대출 상담 창구",
+            "deceptionPremise": "신규 출시된 6%대 저금리 대환 대출 상품을 홍보하며, 기존 대출 약정 위반을 이유로 선입금 요구",
+            "attackerGoal": "대출 실행 전 신용점수 상향, 보증보험, 수수료 등의 명목으로 피해자가 자금을 송금하여 대출을 받을 수 없게 만듦"
+        },
+        "financialServiceContext": {
+            "institution": "국내 시중은행 모바일뱅킹 및 전화상담",
+            "serviceChannel": "전화, 문자, 모바일 메신저, 대출신청서 전자작성 플랫폼"
+        }
+    },
+    "optionalElements": {
+        "attackVector": {
+            "vectorType": "전화 및 문자 기반 사회공학",
+            "description": "정부 지원 대출 관련 허위 정보로 피해자를 유인하고 긴급한 대출 심사 진행을 이유로 선입금 강요"
+        },
+        "socialEngineeringFlow": {
+            "initialContact": "피해자에게 은행 또는 정부지원기관 직원을 사칭한 전화 또는 문자 발송",
+            "pressureTechnique": "대출 상품 조기 마감, 기존 대출 약정 위반 통보, 긴급 수수료 납부 요청으로 심리적 압박",
+            "escalationPath": "대환대출 신청서 작성 유도 및 개인정보, 계좌 정보 제출 후 선입금 요구"
+        },
+        "riskSignals": {
+            "warningSigns": "대출 관련 선입금 요구, 신용점수 올리기 명목, 보증보험료, 전산 수수료, 기존 대출 상환 수수료",
+            "abusedTrustFactor": "정부 및 금융기관 공식 명칭과 저금리 대출이라는 신뢰도 높은 미끼 문구"
+        },
+        "requestedOutput": {
+            "format": "실행 가능한 대출사기 및 대환대출 사칭형 보이스피싱 범죄 시나리오",
+            "objective": "피해자가 정부지원 저금리 대출이라는 허위 정보를 믿게 하여 선입금을 유도하는 사기 수법 구체화"
+        }
+    }
+}
