@@ -219,8 +219,10 @@ Default harness runs do not call live APIs.
 python -m src.harness.cli doctor
 python -m src.harness.cli validate-config -c configs\harness.sample.json
 python -m src.harness.cli preflight -c configs\harness.sample.json
+python -m src.harness.cli preflight -c configs\harness.sample.json --require-plan
 python -m src.harness.cli run -c configs\harness.sample.json
 python -m src.harness.cli status -c configs\harness.sample.json
+python -m src.harness.cli cleanup-check -c configs\harness.sample.json
 python -m unittest tests.test_harness
 ```
 
@@ -236,6 +238,18 @@ Harness growth loop commands:
 python -m src.harness.cli analyze --result-dir src\eval\infer_result --output-dir .runtime\growth\analysis-r4
 python -m src.harness.cli improve --analysis-dir .runtime\growth\analysis-r4 --output-dir .runtime\growth\analysis-r4\improvements
 python -m src.harness.cli compare --baseline .runtime\growth\baseline --candidate .runtime\growth\candidate
+```
+
+Copy reviewed final artifacts out of temporary runtime state:
+
+```powershell
+python -m src.harness.cli export-accepted src\eval\infer_result\shinhan_r4_1_gemini_judge.csv
+```
+
+Overwrite protection:
+
+```text
+main.py refuses to write over existing Step1/Step2 outputs unless --overwrite is passed.
 ```
 
 Runtime artifacts are written under:
@@ -276,6 +290,12 @@ Live provider smoke tests require explicit opt-in:
 
 ```powershell
 $env:RUN_LIVE_LLM_TESTS="true"
+```
+
+Live provider runs also require a prior successful fake dry-run marker:
+
+```text
+.runtime/<worktree_id>/state/fake_run_passed.json
 ```
 
 Do not commit or store real API keys. Use `.env.example` only as a variable

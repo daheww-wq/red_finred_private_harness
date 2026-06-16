@@ -15,9 +15,12 @@ those flows later, but its first responsibility is operational safety:
 - schema validation
 - duplicate checks
 - PII checks
+- secret pattern scanning
+- command-like dataset payload detection
 - checkpoint/resume
 - structured logging
 - runtime isolation
+- accepted export separation
 
 ## Main Components
 
@@ -28,6 +31,11 @@ src/harness/
   models.py           typed case and result objects
   providers.py        fake/openai/gemini provider contract
   validators.py       schema, PII, duplicate, quality gates
+  secret_scan.py      repository secret-pattern scanning
+  cleanup.py          runtime/workspace cleanup summary
+  exports.py          accepted artifact export helper
+  overwrite_guard.py  output overwrite guard
+  plan_sync.py        markdown exec-plan to runtime lifecycle sync
   checkpoint.py       JSONL checkpoint store
   runtime.py          worktree_id, run_id, paths, JSON logs
   pipeline.py         minimal generator/reviewer orchestration
@@ -55,10 +63,12 @@ state/run_request.json
 state/execution_plan.json
 state/todo.json
 state/preflight.json
+state/fake_run_passed.json
 ```
 
 The first executable gate is always preflight. It inspects code, folders,
-configuration, runtime isolation, seed case conflicts, PII, and live API opt-in
+configuration, runtime isolation, seed case conflicts, PII, secret patterns,
+optional active exec-plan presence, fake dry-run state, and live API opt-in
 before execution continues.
 
 ## Provider Contract
@@ -80,10 +90,14 @@ The same provider may be used for both roles only when explicitly configured.
 
 - Default provider: `fake`
 - Default live API execution: disabled
+- Default live API gate: a successful fake dry-run marker is required before
+  live OpenAI/Gemini provider execution.
 - Default prompt/response logging: summaries only
 - Default output state: generated, reviewed, approved, rejected, or quarantined
 - Default run lifecycle: request materials, plan, preflight, execute, verify,
   checkpoint, report
+- Accepted exports are copied under `exports/accepted/`; temporary run state
+  remains under `.runtime/`.
 
 ## Existing FinRED Relationship
 

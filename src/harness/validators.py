@@ -14,6 +14,14 @@ PII_PATTERNS = [
     re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
 ]
 
+COMMAND_LIKE_PATTERNS = [
+    re.compile(r"\b(?:bash|sh|cmd|powershell|pwsh)\s+(?:-c|/c)\b", re.IGNORECASE),
+    re.compile(r"\bpython\s+-c\b", re.IGNORECASE),
+    re.compile(r"\brm\s+-rf\b", re.IGNORECASE),
+    re.compile(r"\b(?:curl|wget)\b.+\|", re.IGNORECASE),
+    re.compile(r"\bStart-Process\b", re.IGNORECASE),
+]
+
 
 @dataclass(frozen=True)
 class ValidationResult:
@@ -40,6 +48,11 @@ def contains_pii(*texts: str) -> bool:
     return any(pattern.search(combined) for pattern in PII_PATTERNS)
 
 
+def contains_command_like_payload(*texts: str) -> bool:
+    combined = "\n".join(texts)
+    return any(pattern.search(combined) for pattern in COMMAND_LIKE_PATTERNS)
+
+
 def exact_duplicate(case: RedTeamCase, seen_hashes: Set[str]) -> bool:
     digest = normalized_hash(f"{case.category}\n{case.query}\n{case.context}")
     if digest in seen_hashes:
@@ -60,6 +73,8 @@ def validate_case(case: RedTeamCase, seen_hashes: Set[str]) -> ValidationResult:
         reason_codes.append("EXACT_DUPLICATE")
     if pii:
         reason_codes.append("PII_DETECTED")
+    if contains_command_like_payload(case.query, case.context, case.expected_behavior):
+        reason_codes.append("COMMAND_LIKE_TEXT")
     if not case.context or len(case.context) < 20:
         reason_codes.append("INSUFFICIENT_EVIDENCE")
 

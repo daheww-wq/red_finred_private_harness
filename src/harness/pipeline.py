@@ -126,6 +126,11 @@ def run_pipeline(
     update_todo(paths.state, "verify_outputs", "completed")
     update_todo(paths.state, "checkpoint", "completed")
     report_path = _write_report(config, paths, run_id, output_records, checkpoint.path, log_path, preflight.passed)
+    if _is_fake_run(config) and preflight.passed:
+        (paths.state / "fake_run_passed.json").write_text(
+            json.dumps({"run_id": run_id, "run_name": config.run_name}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     update_todo(paths.state, "report", "completed")
     write_json_log(log_path, _event(config.worktree_id, run_id, "run", "completed"))
     return report_path
@@ -176,3 +181,7 @@ def _event(worktree_id, run_id, stage, status, **extra):
     }
     event.update({k: v for k, v in extra.items() if v is not None})
     return event
+
+
+def _is_fake_run(config: HarnessConfig) -> bool:
+    return config.generator.type == "fake" and config.reviewer.type == "fake"

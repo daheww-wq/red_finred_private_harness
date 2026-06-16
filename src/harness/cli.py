@@ -5,8 +5,10 @@ import json
 import sys
 from pathlib import Path
 
+from .cleanup import cleanup_check, write_cleanup_report
 from .comparison import compare_analyses
 from .config import load_config, validate_config
+from .exports import export_accepted
 from .improvement import generate_improvements
 from .ingest import ingest_unclassified_pdfs
 from .lifecycle import load_status
@@ -33,6 +35,7 @@ def main(argv: list[str] | None = None) -> int:
 
     preflight = sub.add_parser("preflight", help="Inspect code, folders, and configuration before a run")
     preflight.add_argument("-c", "--config", required=True)
+    preflight.add_argument("--require-plan", action="store_true")
 
     run = sub.add_parser("run", help="Run the harness pipeline")
     run.add_argument("-c", "--config", required=True)
@@ -79,6 +82,15 @@ def main(argv: list[str] | None = None) -> int:
     plan_sync.add_argument("-c", "--config", default="configs/harness.sample.json")
     plan_sync.add_argument("--worktree-id", default="")
     plan_sync.add_argument("--runtime-root", default="")
+
+    cleanup = sub.add_parser("cleanup-check", help="Summarize runtime artifacts and workspace status")
+    cleanup.add_argument("-c", "--config", default="configs/harness.sample.json")
+    cleanup.add_argument("--output", default="")
+
+    export = sub.add_parser("export-accepted", help="Copy accepted artifacts into exports/accepted")
+    export.add_argument("sources", nargs="+")
+    export.add_argument("--export-root", default="exports/accepted")
+    export.add_argument("--overwrite", action="store_true")
 
     args = parser.parse_args(argv)
 
@@ -131,6 +143,23 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
+    if args.command == "cleanup-check":
+        config = load_config(args.config)
+        result = cleanup_check(Path.cwd(), config.runtime_root)
+        if args.output:
+            write_cleanup_report(result, Path(args.output))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "export-accepted":
+        result = export_accepted(
+            [Path(source) for source in args.sources],
+            export_root=Path(args.export_root),
+            overwrite=args.overwrite,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
     if args.command == "validate-config":
         config = load_config(args.config)
         errors = validate_config(config)
@@ -143,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "preflight":
         config = load_config(args.config)
         paths = ensure_runtime(config.runtime_root, config.worktree_id)
-        report = run_preflight(config, Path.cwd())
+        report = run_preflight(config, Path.cwd(), require_plan=args.require_plan)
         write_preflight_report(paths.state / "preflight.json", report)
         print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         return 0 if report.passed else 2

@@ -203,7 +203,11 @@ remain outside Git.
 The current harness also includes:
 
 ```text
+src/harness/cleanup.py
+src/harness/exports.py
+src/harness/overwrite_guard.py
 src/harness/plan_sync.py
+src/harness/secret_scan.py
 docs/exec-plans/active/README.md
 ```
 
@@ -221,4 +225,15 @@ The command writes:
 .runtime/<worktree_id>/state/execution_plan.json
 .runtime/<worktree_id>/state/todo.json
 .runtime/<worktree_id>/state/plan_sync.json
+```
+
+AGENTS.md enforcement helpers:
+
+```text
+secret scan                 -> preflight
+active plan requirement     -> preflight --require-plan
+fake-before-live gate       -> preflight + fake_run_passed.json
+accepted exports separation -> export-accepted
+cleanup summary             -> cleanup-check
+overwrite protection        -> main.py --overwrite guard
 ```

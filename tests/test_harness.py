@@ -20,6 +20,11 @@ from src.harness.run_analyzer import analyze_results
 from src.harness.improvement import generate_improvements
 from src.harness.comparison import compare_analyses
 from src.harness.plan_sync import parse_exec_plan, sync_exec_plan
+from src.harness.secret_scan import scan_for_secrets
+from src.harness.cleanup import cleanup_check
+from src.harness.exports import export_accepted
+from src.harness.overwrite_guard import assert_no_existing_outputs
+from src.harness.validators import contains_command_like_payload
 
 
 class HarnessTests(unittest.TestCase):
@@ -175,6 +180,82 @@ class HarnessTests(unittest.TestCase):
         result = validate_batch([case])[0]
         self.assertFalse(result.passed)
         self.assertIn("INSUFFICIENT_EVIDENCE", result.reason_codes)
+
+    def test_command_like_payload_is_quarantined(self):
+        case = RedTeamCase(
+            case_id="case-1",
+            category="R1_1",
+            query="run bash -c payload",
+            context="context with enough evidence for validation",
+            expected_behavior="safe refusal",
+        )
+        result = validate_batch([case])[0]
+        self.assertTrue(contains_command_like_payload(case.query))
+        self.assertIn("COMMAND_LIKE_TEXT", result.reason_codes)
+
+    def test_secret_scan_detects_repository_secrets_but_ignores_env(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "safe.txt").write_text("sk-proj-" + "a" * 24, encoding="utf-8")
+            (root / ".env").write_text("OPENAI_API_KEY=sk-proj-" + "b" * 24, encoding="utf-8")
+            findings = scan_for_secrets(root)
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].path, "safe.txt")
+
+    def test_preflight_can_require_active_plan(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_minimal_project(root)
+            config = self._config(root)
+            report = run_preflight(config, root, require_plan=True)
+            self.assertFalse(report.passed)
+            self.assertIn("EXEC_PLAN_REQUIRED", [finding.reason_code for finding in report.findings])
+
+            active = root / "docs" / "exec-plans" / "active"
+            active.mkdir(parents=True)
+            (active / "plan.md").write_text("# Plan\n\n- [ ] Do work\n", encoding="utf-8")
+            report = run_preflight(config, root, require_plan=True)
+            self.assertNotIn("EXEC_PLAN_REQUIRED", [finding.reason_code for finding in report.findings])
+
+    def test_pipeline_writes_fake_run_marker(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._write_minimal_project(root)
+            config = self._config(root)
+            run_pipeline(config, project_root=root)
+            marker = root / ".runtime" / "unit-worktree" / "state" / "fake_run_passed.json"
+            self.assertTrue(marker.exists())
+
+    def test_export_accepted_copies_to_separate_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            source = root / "result.csv"
+            source.write_text("a,b\n1,2\n", encoding="utf-8")
+            manifest = export_accepted([source], export_root=root / "exports" / "accepted")
+            self.assertEqual(len(manifest["files"]), 1)
+            self.assertTrue((root / "exports" / "accepted" / "result.csv").exists())
+            with self.assertRaises(FileExistsError):
+                export_accepted([source], export_root=root / "exports" / "accepted")
+
+    def test_cleanup_check_summarizes_runtime(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            report_dir = root / ".runtime" / "unit" / "reports"
+            report_dir.mkdir(parents=True)
+            (report_dir / "report.json").write_text("{}", encoding="utf-8")
+            result = cleanup_check(root)
+            self.assertTrue(result["runtime_exists"])
+            self.assertEqual(result["report_count"], 1)
+
+    def test_overwrite_guard_blocks_existing_outputs(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            out = root / "outputs" / "R1_1"
+            out.mkdir(parents=True)
+            (out / "existing.json").write_text("{}", encoding="utf-8")
+            with self.assertRaises(FileExistsError):
+                assert_no_existing_outputs([out])
+            assert_no_existing_outputs([out], overwrite=True)
 
     def test_checkpoint_roundtrip(self):
         with tempfile.TemporaryDirectory() as d:

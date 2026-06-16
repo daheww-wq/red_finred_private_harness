@@ -4,6 +4,7 @@ from pathlib import Path
 # src 폴더 내의 모듈 임포트
 from src.Step1_build import ScenarioGenerator
 from src.Step2_build import RedTeamingPromptGenerator
+from src.harness.overwrite_guard import assert_no_existing_outputs
 
 current_dir = Path(__file__).resolve().parent
 sys.path.append(str(current_dir / "src"))
@@ -47,6 +48,7 @@ def main():
     parser.add_argument('--lang', type=str, default='ko', choices=['ko', 'en'], help='Step 2 프롬프트 생성 언어 (기본: ko)')
     parser.add_argument('--num_prompts', type=int, default=3, help='Step 2 생성 프롬프트 개수 (K값)')
     parser.add_argument('--model_name', type=str, default='gpt-4.1-mini', help='FinRED step1 에서는 gpt-4.1 로 진행, step2 에서는 gemini-2.5-pro로 진행함.')
+    parser.add_argument('--overwrite', action='store_true', help='기존 Step1/Step2 산출물 덮어쓰기 허용')
 
     args = parser.parse_args()
 
@@ -66,6 +68,7 @@ def main():
         print(f"\n[Step 1] 시나리오 생성 시작 (Category: {args.category})")
         
         for cat in target_categories:
+            assert_no_existing_outputs([paths['output_scenarios'] / cat], overwrite=args.overwrite)
             # Step 1 클래스는 인스턴스 생성 시 project_root와 output_path를 받습니다.
             step1_runner = ScenarioGenerator(
                 project_root=str(paths['project_root']),
@@ -84,6 +87,13 @@ def main():
         print(f"\n[Step 2] 시드 프롬프트 생성 시작 (Category: {args.category}, Lang: {args.lang})")
         
         for cat in target_categories:
+            assert_no_existing_outputs(
+                [
+                    paths['output_prompts'] / cat,
+                    paths['output_prompts'] / f"{cat}_prompts_all.csv",
+                ],
+                overwrite=args.overwrite,
+            )
             # Step 2 클래스 인스턴스 생성
             step2_runner = RedTeamingPromptGenerator(
                 project_root=str(paths['project_root']),

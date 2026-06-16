@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Set
 
 from .config import HarnessConfig, validate_config
+from .secret_scan import scan_for_secrets
 from .validators import contains_pii
 
 
@@ -49,7 +50,7 @@ REQUIRED_FILES = [
 ]
 
 
-def run_preflight(config: HarnessConfig, project_root: Path) -> PreflightReport:
+def run_preflight(config: HarnessConfig, project_root: Path, require_plan: bool = False) -> PreflightReport:
     findings: List[PreflightFinding] = []
     project_root = project_root.resolve()
 
@@ -62,6 +63,18 @@ def run_preflight(config: HarnessConfig, project_root: Path) -> PreflightReport:
 
     if not _gitignore_contains(project_root, ".runtime/"):
         findings.append(PreflightFinding("warning", "RUNTIME_NOT_GITIGNORED", ".runtime/ is not ignored"))
+
+    for secret in scan_for_secrets(project_root):
+        findings.append(PreflightFinding("error", secret.reason_code, secret.to_message()))
+
+    if require_plan and not _has_active_plan(project_root):
+        findings.append(
+            PreflightFinding(
+                "error",
+                "EXEC_PLAN_REQUIRED",
+                "docs/exec-plans/active/ must contain at least one markdown plan",
+            )
+        )
 
     if not _is_subpath(config.runtime_root.resolve(), project_root):
         findings.append(
@@ -81,8 +94,17 @@ def run_preflight(config: HarnessConfig, project_root: Path) -> PreflightReport:
             )
         )
 
+    live_types = {config.generator.type, config.reviewer.type} & {"openai", "gemini"}
+    if config.live_api_enabled and live_types and not _fake_run_passed(config):
+        findings.append(
+            PreflightFinding(
+                "error",
+                "FAKE_DRY_RUN_REQUIRED",
+                "live execution requires a prior fake provider dry-run marker",
+            )
+        )
+
     if not config.live_api_enabled:
-        live_types = {config.generator.type, config.reviewer.type} & {"openai", "gemini"}
         if live_types:
             findings.append(
                 PreflightFinding(
@@ -118,6 +140,16 @@ def _gitignore_contains(project_root: Path, entry: str) -> bool:
     return entry in lines
 
 
+def _has_active_plan(project_root: Path) -> bool:
+    active = project_root / "docs" / "exec-plans" / "active"
+    return active.exists() and any(path.suffix.lower() == ".md" and path.name.lower() != "readme.md" for path in active.iterdir())
+
+
+def _fake_run_passed(config: HarnessConfig) -> bool:
+    marker = config.runtime_root / config.worktree_id / "state" / "fake_run_passed.json"
+    return marker.exists()
+
+
 def _is_subpath(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
@@ -146,14 +178,16 @@ def _git(args: List[str], cwd: Path) -> Dict[str, Any]:
             ["git", *args],
             cwd=str(cwd),
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
             check=False,
             timeout=10,
         )
         return {
             "returncode": proc.returncode,
-            "stdout": proc.stdout.strip(),
-            "stderr": proc.stderr.strip(),
+            "stdout": (proc.stdout or "").strip(),
+            "stderr": (proc.stderr or "").strip(),
         }
     except Exception as exc:
         return {"returncode": 1, "stdout": "", "stderr": str(exc)}
