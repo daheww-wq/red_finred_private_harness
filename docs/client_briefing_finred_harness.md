@@ -5,6 +5,91 @@
 
 ---
 
+## Autonomous Growth Loop Addendum
+
+The harness now includes a first implementation of an automated growth loop.
+This is not a fully self-promoting autonomous system yet. It is a safer
+"auto-suggest, auto-validate, human-approve" loop designed for customer-facing
+governance.
+
+Implemented flow:
+
+```text
+judge outputs
+  -> normalize cases
+  -> classify failure types
+  -> write analysis summary
+  -> generate improvement candidates
+  -> validate candidates
+  -> append validated items to review queue
+  -> compare baseline and candidate runs
+```
+
+New modules:
+
+| Module | Role |
+|---|---|
+| `src/harness/result_schema.py` | Shared schemas for analyzed cases and improvement candidates |
+| `src/harness/run_analyzer.py` | Reads judge CSV/JSON outputs, normalizes cases, extracts failures |
+| `src/harness/improvement.py` | Generates improvement candidates from failure cases |
+| `src/harness/improvement_validators.py` | Filters candidates for PII, duplicates, missing taxonomy, weak prompts |
+| `src/harness/comparison.py` | Compares two analysis summaries and writes JSON/Markdown reports |
+
+New CLI examples:
+
+```powershell
+python -m src.harness.cli analyze --result-dir src\eval\infer_result --output-dir .runtime\growth\analysis-r4
+python -m src.harness.cli improve --analysis-dir .runtime\growth\analysis-r4 --output-dir .runtime\growth\analysis-r4\improvements
+python -m src.harness.cli compare --baseline .runtime\growth\baseline --candidate .runtime\growth\candidate
+```
+
+Generated artifacts:
+
+```text
+.runtime/growth/<analysis>/summary.json
+.runtime/growth/<analysis>/cases.jsonl
+.runtime/growth/<analysis>/failure_cases.jsonl
+.runtime/growth/<analysis>/improvements/improvement_candidates.jsonl
+.runtime/growth/<analysis>/improvements/improvement_summary.json
+.runtime/review_queue/improvement_queue.jsonl
+.runtime/comparisons/<comparison>/comparison.json
+.runtime/comparisons/<comparison>/comparison.md
+```
+
+Failure types currently classified:
+
+| Failure type | Meaning |
+|---|---|
+| `UNSAFE_RESPONSE` | Judge result indicates an unsafe target response |
+| `RUBRIC_MISMATCH` | Final judgment and rubric-level labels disagree |
+| `JUDGE_UNCLEAR` | Judge output is missing, unknown, or error-like |
+| `MODEL_ERROR` | Response is missing |
+| `QUOTA_OR_TIMEOUT` | Source output indicates partial, quota, or timeout interruption |
+
+Smoke result on the current local infer-result folder:
+
+```text
+total_cases: 19
+failure_cases: 8
+pass_cases: 11
+failure_rate: 0.4211
+validated_improvement_candidates: 6
+rejected_improvement_candidates: 2
+```
+
+Governance position:
+
+```text
+Current state:
+  automated analysis + automated suggestion + automated validation + review queue
+
+Not yet enabled:
+  automatic promotion into canonical scenario/prompt datasets without review
+```
+
+This lets the project be described as a harness with an implemented
+human-in-the-loop self-improvement layer.
+
 ## 1. 한 줄 요약
 
 FinRED 하네스는 금융 도메인 레드팀 평가 데이터를 반복 가능하게 생성하고, 모델 응답을 Safe/Unsafe로 평가하며, 실행 과정과 산출물을 추적하기 위한 운영 레이어입니다.

@@ -5,15 +5,18 @@ import json
 import sys
 from pathlib import Path
 
+from .comparison import compare_analyses
 from .config import load_config, validate_config
+from .improvement import generate_improvements
 from .ingest import ingest_unclassified_pdfs
 from .lifecycle import load_status
 from .local_retrieve import retrieve_local
 from .pdf_chunk import chunk_common_category
 from .pipeline import run_pipeline
 from .preflight import run_preflight, write_preflight_report
+from .run_analyzer import analyze_results
 from .runtime import ensure_runtime
-from .runtime import doctor_summary, load_harness_env, make_worktree_id
+from .runtime import create_run_id, doctor_summary, load_harness_env, make_worktree_id
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -56,6 +59,20 @@ def main(argv: list[str] | None = None) -> int:
     local_retrieve.add_argument("--category", required=True)
     local_retrieve.add_argument("--top-k", type=int, default=12)
 
+    analyze = sub.add_parser("analyze", help="Normalize judge outputs and extract failure cases")
+    analyze.add_argument("--result-dir", default="src/eval/infer_result")
+    analyze.add_argument("--output-dir", default="")
+
+    improve = sub.add_parser("improve", help="Create validated improvement candidates from an analysis")
+    improve.add_argument("--analysis-dir", required=True)
+    improve.add_argument("--output-dir", default="")
+    improve.add_argument("--review-queue", default=".runtime/review_queue/improvement_queue.jsonl")
+
+    compare = sub.add_parser("compare", help="Compare two analysis summaries")
+    compare.add_argument("--baseline", required=True)
+    compare.add_argument("--candidate", required=True)
+    compare.add_argument("--output-dir", default="")
+
     args = parser.parse_args(argv)
 
     if args.command == "doctor":
@@ -78,6 +95,24 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "local-retrieve":
         result = retrieve_local(Path.cwd(), category_prefix=args.category, top_k=args.top_k)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "analyze":
+        output_dir = Path(args.output_dir) if args.output_dir else Path(".runtime") / "growth" / create_run_id()
+        result = analyze_results(Path(args.result_dir), output_dir)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "improve":
+        output_dir = Path(args.output_dir) if args.output_dir else Path(args.analysis_dir) / "improvements"
+        result = generate_improvements(Path(args.analysis_dir), output_dir, Path(args.review_queue))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "compare":
+        output_dir = Path(args.output_dir) if args.output_dir else Path(".runtime") / "comparisons" / create_run_id()
+        result = compare_analyses(Path(args.baseline), Path(args.candidate), output_dir)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
