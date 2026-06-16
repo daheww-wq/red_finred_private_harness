@@ -197,3 +197,28 @@ tests/outputs/
 Small source-derived CSV/JSON files needed for reproducibility may be committed
 when they are intentionally curated. Raw documents and runtime outputs should
 remain outside Git.
+
+## Exec Plan Sync Addendum
+
+The current harness also includes:
+
+```text
+src/harness/plan_sync.py
+docs/exec-plans/active/README.md
+```
+
+Use this command to synchronize a human-readable markdown exec-plan into
+machine-readable runtime lifecycle state:
+
+```powershell
+python -m src.harness.cli plan-sync --plan docs\exec-plans\tech-debt-tracker.md -c configs\harness.sample.json
+```
+
+The command writes:
+
+```text
+.runtime/<worktree_id>/state/run_request.json
+.runtime/<worktree_id>/state/execution_plan.json
+.runtime/<worktree_id>/state/todo.json
+.runtime/<worktree_id>/state/plan_sync.json
+```

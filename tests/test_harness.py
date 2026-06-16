@@ -19,6 +19,7 @@ from src.harness.validators import contains_pii, validate_batch
 from src.harness.run_analyzer import analyze_results
 from src.harness.improvement import generate_improvements
 from src.harness.comparison import compare_analyses
+from src.harness.plan_sync import parse_exec_plan, sync_exec_plan
 
 
 class HarnessTests(unittest.TestCase):
@@ -124,6 +125,44 @@ class HarnessTests(unittest.TestCase):
             result = compare_analyses(baseline, candidate, root / "comparison")
             self.assertEqual(result["failure_case_delta"], -1)
             self.assertTrue((root / "comparison" / "comparison.md").exists())
+
+    def test_plan_sync_writes_runtime_lifecycle_state(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            plan_path = root / "plan.md"
+            plan_path.write_text(
+                "# Execution Plan: Cleanup\n\n"
+                "## Scope\n\n"
+                "- [x] Inspect files\n"
+                "- [ ] Remove generated artifacts\n"
+                "- [~] Update docs\n",
+                encoding="utf-8",
+            )
+            parsed = parse_exec_plan(plan_path)
+            self.assertEqual(parsed.todo[0].status, "completed")
+            self.assertEqual(parsed.todo[1].status, "pending")
+            self.assertEqual(parsed.todo[2].status, "in_progress")
+
+            result = sync_exec_plan(plan_path, root / ".runtime", "unit-worktree")
+            state = root / ".runtime" / "unit-worktree" / "state"
+            self.assertTrue((state / "execution_plan.json").exists())
+            self.assertTrue((state / "todo.json").exists())
+            self.assertEqual(result["todo_count"], 3)
+
+    def test_plan_sync_combines_wrapped_bullets(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            plan_path = root / "plan.md"
+            plan_path.write_text(
+                "# Tech Debt Tracker\n\n"
+                "## Open Items\n\n"
+                "- Connect harness pipeline to existing FinRED Step1/Step2 modules through a\n"
+                "  wrapper instead of direct imports in phase 1.\n",
+                encoding="utf-8",
+            )
+            parsed = parse_exec_plan(plan_path)
+            self.assertEqual(len(parsed.todo), 1)
+            self.assertIn("wrapper instead", parsed.todo[0].title)
 
     def test_insufficient_evidence_fails_validation(self):
         case = RedTeamCase(

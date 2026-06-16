@@ -224,6 +224,12 @@ python -m src.harness.cli status -c configs\harness.sample.json
 python -m unittest tests.test_harness
 ```
 
+Sync markdown exec-plans into runtime lifecycle state:
+
+```powershell
+python -m src.harness.cli plan-sync --plan docs\exec-plans\tech-debt-tracker.md -c configs\harness.sample.json
+```
+
 Harness growth loop commands:
 
 ```powershell

@@ -13,6 +13,7 @@ from .lifecycle import load_status
 from .local_retrieve import retrieve_local
 from .pdf_chunk import chunk_common_category
 from .pipeline import run_pipeline
+from .plan_sync import sync_exec_plan
 from .preflight import run_preflight, write_preflight_report
 from .run_analyzer import analyze_results
 from .runtime import ensure_runtime
@@ -73,6 +74,12 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("--candidate", required=True)
     compare.add_argument("--output-dir", default="")
 
+    plan_sync = sub.add_parser("plan-sync", help="Sync a markdown exec-plan into runtime lifecycle state")
+    plan_sync.add_argument("--plan", default="docs/exec-plans/tech-debt-tracker.md")
+    plan_sync.add_argument("-c", "--config", default="configs/harness.sample.json")
+    plan_sync.add_argument("--worktree-id", default="")
+    plan_sync.add_argument("--runtime-root", default="")
+
     args = parser.parse_args(argv)
 
     if args.command == "doctor":
@@ -113,6 +120,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "compare":
         output_dir = Path(args.output_dir) if args.output_dir else Path(".runtime") / "comparisons" / create_run_id()
         result = compare_analyses(Path(args.baseline), Path(args.candidate), output_dir)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "plan-sync":
+        config = load_config(args.config) if args.config else None
+        runtime_root = Path(args.runtime_root) if args.runtime_root else config.runtime_root
+        worktree_id = args.worktree_id or config.worktree_id
+        result = sync_exec_plan(Path(args.plan), runtime_root, worktree_id)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 

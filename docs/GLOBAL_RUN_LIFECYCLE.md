@@ -30,6 +30,41 @@ Each run writes state under:
   preflight.json
 ```
 
+## Exec Plan Sync
+
+Human-readable execution plans live under:
+
+```text
+docs/exec-plans/active/
+docs/exec-plans/completed/
+docs/exec-plans/tech-debt-tracker.md
+```
+
+They do not update runtime state by themselves. To turn a markdown plan into
+machine-readable lifecycle state, run:
+
+```powershell
+python -m src.harness.cli plan-sync --plan docs\exec-plans\active\<plan>.md -c configs\harness.sample.json
+```
+
+This writes:
+
+```text
+.runtime/<worktree_id>/state/run_request.json
+.runtime/<worktree_id>/state/execution_plan.json
+.runtime/<worktree_id>/state/todo.json
+.runtime/<worktree_id>/state/plan_sync.json
+```
+
+Markdown checkbox status is mapped as follows:
+
+```text
+- [ ] pending
+- [~] in_progress
+- [x] completed
+- [-] skipped
+```
+
 ## Preflight Gate
 
 The first executable stage is always preflight. It checks the current code and
@@ -95,4 +130,3 @@ what failed and why
 what final outputs mean
 what remains unresolved
 ```
-

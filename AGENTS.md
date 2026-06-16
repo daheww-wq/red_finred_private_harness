@@ -17,9 +17,14 @@ harness layer for repeatable financial red-team dataset engineering.
 
 1. Inspect repository state and existing files.
 2. Record an execution plan in `docs/exec-plans/active/`.
-3. Use fake provider dry-runs before live provider smoke tests.
-4. Validate schemas, duplicates, PII, checkpoint behavior, and logs.
-5. Update docs when code behavior changes.
+3. Sync the plan into runtime lifecycle state with `python -m src.harness.cli plan-sync --plan <plan.md>`.
+4. Use fake provider dry-runs before live provider smoke tests.
+5. Validate schemas, duplicates, PII, checkpoint behavior, and logs.
+6. Update docs when code behavior changes.
+
+`docs/exec-plans/*.md` files are human-readable plans. `.runtime/<worktree_id>/state/*.json`
+is machine-readable lifecycle state. Keep them synchronized when a task is
+substantial enough to need an execution plan.
 
 ## Live Provider Rules
 
