@@ -80,7 +80,7 @@
    ┌─────────────┐
    │ Evaluation  │  LLM Judge 기반 모델 응답 평가
    └─────────────┘
-         │ tests/infer_result/*.csv, *.json
+        │ src/eval/infer_result/*.csv, *.json
          ▼
    [ASR (Attack Success Rate) 산출]
 ```
@@ -156,7 +156,7 @@ python src/eval/judge_finred.py \
 python src/eval/judge_finred.py \
     -i ./src/eval/dataset/qwen_2.5_7b_all_with_responses.csv \
     -o qwen2.5_7b_responses \
-    -d ./tests/infer_result/
+    -d ./src/eval/infer_result/
 ```
 
 ---
@@ -224,10 +224,26 @@ python -m src.harness.cli status -c configs\harness.sample.json
 python -m unittest tests.test_harness
 ```
 
+Harness growth loop commands:
+
+```powershell
+python -m src.harness.cli analyze --result-dir src\eval\infer_result --output-dir .runtime\growth\analysis-r4
+python -m src.harness.cli improve --analysis-dir .runtime\growth\analysis-r4 --output-dir .runtime\growth\analysis-r4\improvements
+python -m src.harness.cli compare --baseline .runtime\growth\baseline --candidate .runtime\growth\candidate
+```
+
 Runtime artifacts are written under:
 
 ```text
 .runtime/<worktree_id>/
+```
+
+Generated smoke/test outputs are intentionally ignored by Git:
+
+```text
+tests/infer_result/
+tests/outputs/
+judge_errors/
 ```
 
 Each run writes lifecycle state:
@@ -331,8 +347,10 @@ FinRED/
 │       └── template/
 │           └── rubric_financial.py  # 금융 루브릭 채점 템플릿
 │
-└── tests/                           # 테스트 및 실험 결과
+└── tests/                           # 테스트 코드 및 튜토리얼
     ├── judge.ipynb                  # 평가 실험 노트북
-    ├── outputs/                     # 테스트 생성 결과
-    └── infer_result/                # 평가 결과 (CSV, JSON, ASR)
+    ├── preprocess.ipynb             # 전처리 튜토리얼
+    ├── step_1_tutorial.ipynb        # Step1 튜토리얼
+    ├── step_2_tutorial.ipynb        # Step2 튜토리얼
+    └── test_harness.py              # 하네스 단위 테스트
 ```
