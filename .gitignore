@@ -17,3 +17,6 @@ __pycache__/
 *.log
 .DS_Store
 .runtime/
+judge_errors/
+tests/infer_result/
+tests/outputs/
