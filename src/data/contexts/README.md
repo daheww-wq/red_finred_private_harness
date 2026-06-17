@@ -1,3 +1,10 @@
+---
+id: 7fd6b042-dc7d-4692-8fe5-6535cef6c8ad
+title: Untitled
+created: '2026-06-17T13:53:14.596Z'
+updated: '2026-06-17T13:53:16.608Z'
+tags: []
+---
 # Context Output Guide
 
 이 폴더는 Step1이 읽는 최종 컨텍스트 산출물을 보관합니다.
