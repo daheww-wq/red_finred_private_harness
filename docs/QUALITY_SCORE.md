@@ -2,7 +2,7 @@
 id: 3a80a33d-f277-46bd-b5dc-4ecbb0586d74
 title: Untitled
 created: '2026-06-17T13:42:25.831Z'
-updated: '2026-06-17T13:54:16.417Z'
+updated: '2026-06-17T14:09:37.093Z'
 tags: []
 ---
 # Quality Score Rules
