@@ -2,7 +2,7 @@
 id: 07dcb802-ce2a-437b-b34f-68c883701b31
 title: Untitled
 created: '2026-06-17T13:42:00.892Z'
-updated: '2026-06-17T13:42:03.071Z'
+updated: '2026-06-18T14:59:53.359Z'
 tags: []
 ---
 # Harness Architecture
