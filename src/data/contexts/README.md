@@ -2,7 +2,7 @@
 id: 7fd6b042-dc7d-4692-8fe5-6535cef6c8ad
 title: Untitled
 created: '2026-06-17T13:53:14.596Z'
-updated: '2026-06-17T13:53:16.608Z'
+updated: '2026-06-21T02:19:35.087Z'
 tags: []
 ---
 # Context Output Guide
